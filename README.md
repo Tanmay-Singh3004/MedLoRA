@@ -36,17 +36,32 @@ The training logs (attached below) indicate:
 ## Usage
 To load and use the model:
 ```python
+import os
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-tokenizer = AutoTokenizer.from_pretrained("your-huggingface-username/llama_medical")
-model = AutoModelForCausalLM.from_pretrained("your-huggingface-username/llama_medical")
+os.environ["HF_KEY"] = "enter key to access your hugging face account in order to import the model"
+
+model_name = "Tanmay3004/llama_medical"
+tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=os.getenv("HF_KEY"))
+model = AutoModelForCausalLM.from_pretrained(model_name, use_auth_token=os.getenv("HF_KEY"))
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+
+template = "Question:\n{question}\n\nAnswer:\n{answer}"
+
+prompt = template.format(
+    question="What are the treatments for Paget's Disease of Bone?",
+    answer=""
+)
 
 def generate_medical_response(prompt):
-    inputs = tokenizer(prompt, return_tensors="pt")
-    outputs = model.generate(**inputs)
+    inputs = tokenizer(prompt, return_tensors="pt").to(device)  # Move inputs to the same device
+    outputs = model.generate(**inputs, max_new_tokens=100)
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-print(generate_medical_response("What are the symptoms of diabetes?"))
+print(generate_medical_response(prompt))
 ```
 
 ## Future Improvements
